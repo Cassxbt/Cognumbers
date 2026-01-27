@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {euint256, ebool, e, inco} from "@inco/lightning/src/Lib.sol";
+import {euint256, ebool, e, inco} from "@inco/lightning/src/Lib.testnet.sol";
 import {IIncoVerifier} from "@inco/lightning/src/interfaces/IIncoVerifier.sol";
 import {DecryptionAttestation} from "@inco/lightning/src/lightning-parts/DecryptionAttester.types.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -552,9 +552,14 @@ contract Cognumbers is ReentrancyGuard, Ownable, Pausable {
     // ============ Receive ============
 
     /**
-     * @notice Reject direct ETH transfers
+     * @notice Accept ETH transfers for Inco fee funding
+     * @dev Anyone can fund the contract for Inco FHE fees
      */
-    receive() external payable {
-        revert("Use joinGame to participate");
-    }
+    receive() external payable {}
+
+    /**
+     * @notice Deposit ETH to fund Inco FHE operations
+     * @dev Alternative explicit method to fund the contract
+     */
+    function depositFees() external payable {}
 }

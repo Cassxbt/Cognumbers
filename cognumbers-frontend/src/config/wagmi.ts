@@ -8,4 +8,4 @@ export const config = getDefaultConfig({
   ssr: false,
 })
 
-export const CONTRACT_ADDRESS = '0x2f3268bd8ff551b770fd4830c1d2b68ef1a9e5e4' as const
+export const CONTRACT_ADDRESS = '0xe3aab2f36601cec8d217da5497fc3fe00ed22538' as const

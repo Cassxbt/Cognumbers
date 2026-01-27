@@ -4,58 +4,49 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "../src/Cognumbers.sol";
 
+/**
+ * @title CognumbersTest
+ * @notice Tests for Cognumbers contract
+ * @dev Note: FHE operations require Inco network. These tests verify non-FHE logic.
+ */
 contract CognumbersTest is Test {
     Cognumbers public game;
     
-    address public alice = address(0x1);
-    address public bob = address(0x2);
-    address public charlie = address(0x3);
+    address public owner = address(0x1);
+    address public alice = address(0x2);
+    address public bob = address(0x3);
 
     function setUp() public {
-        game = new Cognumbers();
+        game = new Cognumbers(owner);
         vm.deal(alice, 10 ether);
         vm.deal(bob, 10 ether);
-        vm.deal(charlie, 10 ether);
     }
 
-    function test_CreateGame() public {
-        uint256 gameId = game.createGame(0.01 ether, 1 hours);
-        
-        (
-            uint256 id,
-            address creator,
-            Cognumbers.GameStatus status,
-            uint256 entryFee,
-            uint256 deadline,
-            uint256 playerCount,
-            ,
-        ) = game.games(gameId);
-        
-        assertEq(id, 0);
-        assertEq(creator, address(this));
-        assertEq(uint256(status), uint256(Cognumbers.GameStatus.Open));
-        assertEq(entryFee, 0.01 ether);
-        assertEq(playerCount, 0);
-        assertGt(deadline, block.timestamp);
+    function test_Deployment() public view {
+        assertEq(game.owner(), owner);
+        assertEq(game.gameIdCounter(), 0);
     }
 
-    function test_ResolveWinner_UniqueMinimum() public {
-        // This test simulates the resolution phase with decrypted values
-        // In production, these would come from attested decryptions
-        
-        uint256 gameId = game.createGame(0.01 ether, 1 hours);
-        
-        // Simulate players joining (can't test FHE in Foundry without a local node)
-        // For now, we skip directly to resolution testing
-        
-        // Direct state manipulation for test
-        // In real usage, players would call joinGame with encrypted inputs
+    function test_Constants() public view {
+        assertEq(game.MIN_NUMBER(), 1);
+        assertEq(game.MAX_NUMBER(), 10);
+        assertEq(game.MAX_PLAYERS(), 10);
+        assertEq(game.MIN_PLAYERS(), 2);
     }
 
-    function test_CalculateWinner_Logic() public {
-        // Test the winner calculation with known values
-        // Player 1: 3, Player 2: 5, Player 3: 3 -> Winner is Player 2 (5 is unique minimum)
+    function test_PauseUnpause() public {
+        vm.prank(owner);
+        game.pause();
+        assertTrue(game.paused());
         
-        // This would require exposing _calculateWinner or testing through resolveWinner
+        vm.prank(owner);
+        game.unpause();
+        assertFalse(game.paused());
+    }
+
+    function test_OnlyOwnerCanPause() public {
+        vm.prank(alice);
+        vm.expectRevert();
+        game.pause();
     }
 }

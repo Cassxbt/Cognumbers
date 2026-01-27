@@ -17,6 +17,9 @@ dist-ssr
 .env.*
 !.env.example
 
+# Development journal - never commit
+journal.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
