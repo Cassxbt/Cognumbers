@@ -1,0 +1,40 @@
+# Environment files - NEVER commit secrets!
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node
+node_modules/
+
+# Foundry
+cognumbers-contracts/cache/
+cognumbers-contracts/out/
+cognumbers-contracts/broadcast/**/dry-run/
+
+# Frontend build
+cognumbers-frontend/dist/
+cognumbers-frontend/dist-ssr/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Private keys and secrets
+*.key
+*.pem
+secrets/
+.secrets
+
+# Claude
+.claude/
