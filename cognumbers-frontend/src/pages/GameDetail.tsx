@@ -84,7 +84,7 @@ export function GameDetail() {
   }, [joinError, isJoinReverted])
 
   const handleJoin = async () => {
-    if (!gameId || !game || selectedNumber === null) {
+    if (gameId === undefined || !game || selectedNumber === null) {
       console.log('[JOIN] Missing data:', { gameId, game: !!game, selectedNumber })
       return
     }
