@@ -1,18 +1,7 @@
-import { useReadContract } from 'wagmi'
-import { CONTRACT_ADDRESS } from '../config/wagmi'
-import { LoadingSpinner } from '../components/LoadingSpinner'
-
-// TODO: Add leaderboard ABI when contract supports it
-const leaderboardAbi = [] as const
-
 export function Leaderboard() {
-  // TODO: Replace with actual contract call when leaderboard function exists
-  const { data: leaders, isLoading } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: leaderboardAbi,
-    functionName: 'getLeaderboard',
-    query: { enabled: false }, // Disabled until contract supports it
-  })
+  // Leaderboard will be populated from on-chain events in future update
+  const isLoading = false
+  const hasData = false
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -34,10 +23,10 @@ export function Leaderboard() {
             {isLoading ? (
               <tr>
                 <td colSpan={5} className="px-4 py-12 text-center">
-                  <LoadingSpinner />
+                  <div className="text-slate-500 font-mono">Loading...</div>
                 </td>
               </tr>
-            ) : !leaders || (Array.isArray(leaders) && leaders.length === 0) ? (
+            ) : !hasData ? (
               <tr>
                 <td colSpan={5} className="px-4 py-12 text-center">
                   <div className="text-slate-500 font-mono">

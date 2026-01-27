@@ -121,5 +121,6 @@ function decodeGame(hexData: string, gameId: bigint): Game {
     playerCount: BigInt('0x' + data.slice(5 * chunkSize, 6 * chunkSize)),
     winner: ('0x' + data.slice(6 * chunkSize + 24, 7 * chunkSize)) as `0x${string}`,
     winningNumber: BigInt('0x' + data.slice(7 * chunkSize, 8 * chunkSize)),
+    prizePool: BigInt('0x' + data.slice(8 * chunkSize, 9 * chunkSize)),
   }
 }
