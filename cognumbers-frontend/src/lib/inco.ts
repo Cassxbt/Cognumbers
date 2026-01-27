@@ -18,15 +18,32 @@ export async function encryptNumber(
   value: number,
   accountAddress: `0x${string}`
 ): Promise<`0x${string}`> {
-  const lightning = await getIncoLightning()
+  console.log('[encryptNumber] Starting encryption:', { value, accountAddress, CONTRACT_ADDRESS })
 
-  const ciphertext = await lightning.encrypt(BigInt(value), {
-    accountAddress,
-    dappAddress: CONTRACT_ADDRESS,
-    handleType: handleTypes.euint256,
-  })
+  try {
+    console.log('[encryptNumber] Getting Lightning instance...')
+    const lightning = await getIncoLightning()
+    console.log('[encryptNumber] Got Lightning instance')
 
-  return ciphertext as `0x${string}`
+    console.log('[encryptNumber] Calling lightning.encrypt with:', {
+      value: BigInt(value).toString(),
+      accountAddress,
+      dappAddress: CONTRACT_ADDRESS,
+      handleType: 'euint256',
+    })
+
+    const ciphertext = await lightning.encrypt(BigInt(value), {
+      accountAddress,
+      dappAddress: CONTRACT_ADDRESS,
+      handleType: handleTypes.euint256,
+    })
+
+    console.log('[encryptNumber] Encryption successful, ciphertext:', ciphertext?.slice(0, 66) + '...')
+    return ciphertext as `0x${string}`
+  } catch (err) {
+    console.error('[encryptNumber] Encryption error:', err)
+    throw err
+  }
 }
 
 interface DecryptResult {

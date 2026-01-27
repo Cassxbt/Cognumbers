@@ -9,7 +9,10 @@ export function useEncrypt() {
 
   const encrypt = useCallback(
     async (value: number): Promise<`0x${string}` | null> => {
+      console.log('[useEncrypt] Starting encryption for value:', value, 'address:', address)
+
       if (!address) {
+        console.error('[useEncrypt] No wallet address')
         setError(new Error('Wallet not connected'))
         return null
       }
@@ -18,12 +21,15 @@ export function useEncrypt() {
       setError(null)
 
       try {
+        console.log('[useEncrypt] Calling encryptNumber...')
         const ciphertext = await encryptNumber(value, address)
+        console.log('[useEncrypt] Encryption successful, ciphertext length:', ciphertext?.length)
         return ciphertext
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err))
         setError(error)
-        console.error('Encryption failed:', error)
+        console.error('[useEncrypt] Encryption failed:', error)
+        console.error('[useEncrypt] Error stack:', error.stack)
         return null
       } finally {
         setIsEncrypting(false)

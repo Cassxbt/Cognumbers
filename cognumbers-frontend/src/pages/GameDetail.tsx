@@ -59,30 +59,61 @@ export function GameDetail() {
   }, [game])
 
   useEffect(() => {
-    if (isJoinSuccess || isFinalizeSuccess) {
+    if (isJoinSuccess) {
+      console.log('[GameDetail] Join successful! Refetching game data...')
+      setEncryptionStatus(null)
+      refetch()
+    }
+    if (isFinalizeSuccess) {
+      console.log('[GameDetail] Finalize successful! Refetching game data...')
       refetch()
     }
   }, [isJoinSuccess, isFinalizeSuccess, refetch])
 
-  const handleJoin = async () => {
-    if (!gameId || !game || selectedNumber === null) return
+  // Log join error if any
+  useEffect(() => {
+    if (joinError) {
+      console.error('[GameDetail] Join error:', joinError)
+      setEncryptionStatus(null)
+    }
+  }, [joinError])
 
+  const handleJoin = async () => {
+    if (!gameId || !game || selectedNumber === null) {
+      console.log('[JOIN] Missing data:', { gameId, game: !!game, selectedNumber })
+      return
+    }
+
+    console.log('[JOIN] Starting join process for game', gameId.toString(), 'with number', selectedNumber)
     setEncryptionStatus('ENCRYPTING NUMBER WITH FHE...')
 
     try {
+      console.log('[JOIN] Calling encrypt with value:', selectedNumber)
       const encryptedChoice = await encrypt(selectedNumber)
+      console.log('[JOIN] Encrypt result:', encryptedChoice)
 
       if (!encryptedChoice) {
+        console.error('[JOIN] Encryption returned null/undefined')
         setEncryptionStatus('ENCRYPTION FAILED')
         return
       }
 
+      console.log('[JOIN] Encrypted choice length:', encryptedChoice.length)
+      console.log('[JOIN] Entry fee:', game.entryFee.toString())
+
       setEncryptionStatus('SUBMITTING TO BLOCKCHAIN...')
+      console.log('[JOIN] Calling joinGame with:', {
+        gameId: gameId.toString(),
+        encryptedChoicePreview: encryptedChoice.slice(0, 66) + '...',
+        entryFee: game.entryFee.toString(),
+      })
+
       joinGame(gameId, encryptedChoice, game.entryFee)
-      setEncryptionStatus(null)
+      // Don't clear status - let the isPending/isConfirming/isSuccess states handle UI
+      console.log('[JOIN] joinGame called, waiting for wallet confirmation...')
     } catch (err) {
-      console.error('Join failed:', err)
-      setEncryptionStatus('FAILED TO JOIN')
+      console.error('[JOIN] Error during join:', err)
+      setEncryptionStatus('FAILED TO JOIN: ' + (err instanceof Error ? err.message : String(err)))
     }
   }
 

@@ -75,14 +75,39 @@ export function useJoinGame() {
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
 
   const joinGame = (gameId: bigint, encryptedChoice: `0x${string}`, entryFee: bigint) => {
-    writeContract({
+    console.log('[useJoinGame] Calling writeContract with:', {
       address: CONTRACT_ADDRESS,
-      abi: COGNUMBERS_ABI,
       functionName: 'joinGame',
-      args: [gameId, encryptedChoice],
-      value: entryFee,
+      gameId: gameId.toString(),
+      encryptedChoiceLength: encryptedChoice.length,
+      entryFee: entryFee.toString(),
     })
+
+    writeContract(
+      {
+        address: CONTRACT_ADDRESS,
+        abi: COGNUMBERS_ABI,
+        functionName: 'joinGame',
+        args: [gameId, encryptedChoice],
+        value: entryFee,
+      },
+      {
+        onSuccess: (data) => {
+          console.log('[useJoinGame] writeContract onSuccess, hash:', data)
+        },
+        onError: (err) => {
+          console.error('[useJoinGame] writeContract onError:', err)
+        },
+      }
+    )
   }
+
+  // Log state changes
+  if (hash) console.log('[useJoinGame] Transaction hash:', hash)
+  if (isPending) console.log('[useJoinGame] Transaction pending...')
+  if (isConfirming) console.log('[useJoinGame] Transaction confirming...')
+  if (isSuccess) console.log('[useJoinGame] Transaction success!')
+  if (error) console.error('[useJoinGame] Transaction error:', error)
 
   return {
     joinGame,
