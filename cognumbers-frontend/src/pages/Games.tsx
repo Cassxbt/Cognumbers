@@ -5,8 +5,24 @@ import { LoadingSpinner } from '../components/LoadingSpinner'
 import { GameStatus } from '../types/game'
 import { useState } from 'react'
 import { cn } from '../lib/utils'
+import { isGameExpired } from '../hooks/useContract'
 
 type FilterType = 'all' | 'open' | 'calculating' | 'finished'
+
+// Helper to check if game is truly open (not expired)
+function isGameTrulyOpen(game: { status: number; deadline: bigint }) {
+  return game.status === GameStatus.Open && !isGameExpired(game.deadline)
+}
+
+// Helper to check if game should be shown as expired/finished
+function isGameExpiredOrFinished(game: { status: number; deadline: bigint }) {
+  return (
+    game.status === GameStatus.Finished ||
+    game.status === GameStatus.Cancelled ||
+    game.status === GameStatus.Refunded ||
+    (game.status === GameStatus.Open && isGameExpired(game.deadline))
+  )
+}
 
 export function Games() {
   const { games, isLoading } = useAllGames()
@@ -14,15 +30,15 @@ export function Games() {
 
   const filteredGames = games.filter((game) => {
     if (filter === 'all') return true
-    if (filter === 'open') return game.status === GameStatus.Open
+    if (filter === 'open') return isGameTrulyOpen(game)
     if (filter === 'calculating') return game.status === GameStatus.Calculating
-    if (filter === 'finished') return game.status === GameStatus.Finished
+    if (filter === 'finished') return isGameExpiredOrFinished(game)
     return true
   })
 
-  const openCount = games.filter((g) => g.status === GameStatus.Open).length
+  const openCount = games.filter((g) => isGameTrulyOpen(g)).length
   const calculatingCount = games.filter((g) => g.status === GameStatus.Calculating).length
-  const finishedCount = games.filter((g) => g.status === GameStatus.Finished).length
+  const finishedCount = games.filter((g) => isGameExpiredOrFinished(g)).length
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
