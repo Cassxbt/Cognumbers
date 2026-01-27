@@ -39,5 +39,7 @@ secrets/
 # Claude
 .claude/
 
-# Markdown files - keep local only
+# Markdown files - keep local only (except README)
 *.md
+!README.md
+!**/README.md
