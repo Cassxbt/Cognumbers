@@ -71,8 +71,14 @@ export function useCreateGame() {
 }
 
 export function useJoinGame() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
+  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract()
+  const {
+    isLoading: isConfirming,
+    isSuccess,
+    isError: isReceiptError,
+    error: receiptError,
+    data: receipt,
+  } = useWaitForTransactionReceipt({ hash })
 
   const joinGame = (gameId: bigint, encryptedChoice: `0x${string}`, entryFee: bigint) => {
     console.log('[useJoinGame] Calling writeContract with:', {
@@ -107,14 +113,24 @@ export function useJoinGame() {
   if (isPending) console.log('[useJoinGame] Transaction pending...')
   if (isConfirming) console.log('[useJoinGame] Transaction confirming...')
   if (isSuccess) console.log('[useJoinGame] Transaction success!')
-  if (error) console.error('[useJoinGame] Transaction error:', error)
+  if (isReceiptError) console.error('[useJoinGame] Receipt error:', receiptError)
+  if (receipt) console.log('[useJoinGame] Receipt status:', receipt.status)
+
+  // Check if transaction was mined but reverted (status === 'reverted')
+  const isTxReverted = receipt?.status === 'reverted'
+  const error = writeError || receiptError || (isTxReverted ? new Error('Transaction reverted on-chain. The game may have expired or you may have already joined.') : null)
+
+  if (isTxReverted) {
+    console.error('[useJoinGame] Transaction reverted on-chain!')
+  }
 
   return {
     joinGame,
     hash,
     isPending,
     isConfirming,
-    isSuccess,
+    isSuccess: isSuccess && !isTxReverted,
+    isReverted: isTxReverted,
     error,
   }
 }

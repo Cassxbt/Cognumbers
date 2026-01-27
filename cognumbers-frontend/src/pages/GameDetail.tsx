@@ -33,6 +33,7 @@ export function GameDetail() {
     isPending: isJoining,
     isConfirming: isJoinConfirming,
     isSuccess: isJoinSuccess,
+    isReverted: isJoinReverted,
     error: joinError,
   } = useJoinGame()
 
@@ -70,17 +71,38 @@ export function GameDetail() {
     }
   }, [isJoinSuccess, isFinalizeSuccess, refetch])
 
-  // Log join error if any
+  // Handle join error or reverted transaction
   useEffect(() => {
     if (joinError) {
       console.error('[GameDetail] Join error:', joinError)
       setEncryptionStatus(null)
     }
-  }, [joinError])
+    if (isJoinReverted) {
+      console.error('[GameDetail] Transaction reverted on-chain!')
+      setEncryptionStatus(null)
+    }
+  }, [joinError, isJoinReverted])
 
   const handleJoin = async () => {
     if (!gameId || !game || selectedNumber === null) {
       console.log('[JOIN] Missing data:', { gameId, game: !!game, selectedNumber })
+      return
+    }
+
+    // Check deadline before proceeding - add 30 second buffer for tx to be mined
+    const nowSeconds = Math.floor(Date.now() / 1000)
+    const deadlineSeconds = Number(game.deadline)
+    const timeUntilDeadline = deadlineSeconds - nowSeconds
+
+    console.log('[JOIN] Deadline check:', {
+      now: nowSeconds,
+      deadline: deadlineSeconds,
+      timeUntilDeadline,
+    })
+
+    if (timeUntilDeadline < 30) {
+      setEncryptionStatus('GAME DEADLINE TOO CLOSE - CANNOT JOIN')
+      console.error('[JOIN] Deadline too close, need at least 30 seconds buffer')
       return
     }
 
@@ -237,9 +259,11 @@ export function GameDetail() {
                 </div>
               )}
 
-              {(joinError || encryptError) && (
+              {(joinError || encryptError || isJoinReverted) && (
                 <div className="mt-4 p-3 border border-red-500/50 bg-red-500/10 text-red-400 text-sm font-mono">
-                  ERROR: {joinError?.message || encryptError?.message}
+                  ERROR: {isJoinReverted
+                    ? 'Transaction reverted! The game may have expired or you already joined.'
+                    : (joinError?.message || encryptError?.message)}
                 </div>
               )}
 
