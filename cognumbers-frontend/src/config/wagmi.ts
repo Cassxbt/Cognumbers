@@ -8,4 +8,6 @@ export const config = getDefaultConfig({
   ssr: false,
 })
 
-export const CONTRACT_ADDRESS = '0xe3aab2f36601cec8d217da5497fc3fe00ed22538' as const
+// Original full contract: 0xe3aab2f36601cec8d217da5497fc3fe00ed22538
+// Minimal test contract for debugging
+export const CONTRACT_ADDRESS = '0x4aD54bAFb404e66988828EC3D1193Da317Dc2Ebb' as const
