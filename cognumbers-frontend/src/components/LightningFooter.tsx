@@ -1,110 +1,186 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
-const words = ['COGNUMBERS', '//', 'INCO', '//', 'CASSXBT']
+// Only the actual words - skip separators for lightning effect
+const words = ['COGNUMBERS', 'INCO', 'CASSXBT']
 
 export function LightningFooter() {
-  const [activeIndex, setActiveIndex] = useState(-1)
+  const [activeWordIndex, setActiveWordIndex] = useState(0)
+  const [activeLetterIndex, setActiveLetterIndex] = useState(-1) // -1 = not started
+  const [isRunning, setIsRunning] = useState(true)
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveIndex((prev) => {
-        const next = prev + 1
-        if (next >= words.length + 3) {
-          return -1 // Reset with pause
+  const currentWord = words[activeWordIndex]
+
+  // Move to next letter or next word
+  const advance = useCallback(() => {
+    setActiveLetterIndex((prev) => {
+      const nextIndex = prev + 1
+
+      // Finished current word
+      if (nextIndex >= currentWord.length + 5) {
+        // +5 to let trail fully exit
+        // Check if we finished all words
+        if (activeWordIndex >= words.length - 1) {
+          // Pause before restarting
+          setIsRunning(false)
+          setTimeout(() => {
+            setActiveWordIndex(0)
+            setActiveLetterIndex(-1)
+            setIsRunning(true)
+          }, 3000) // 3 second gap
+          return prev
+        } else {
+          // Move to next word
+          setActiveWordIndex((w) => w + 1)
+          return -1
         }
-        return next
-      })
-    }, 150) // Speed of lightning movement
+      }
+      return nextIndex
+    })
+  }, [activeWordIndex, currentWord.length])
 
+  // Main animation loop - slow trace
+  useEffect(() => {
+    if (!isRunning) return
+
+    const interval = setInterval(advance, 180) // Slow: 180ms per letter
     return () => clearInterval(interval)
-  }, [])
+  }, [isRunning, advance])
+
+  // Calculate trail intensity for a letter (0 = no effect, 1 = brightest)
+  const getTrailIntensity = (wordIndex: number, letterIndex: number): number => {
+    if (wordIndex !== activeWordIndex) return 0
+
+    const distance = activeLetterIndex - letterIndex
+
+    // 6-letter trail: active letter + 5 trailing
+    if (distance < 0 || distance > 5) return 0
+
+    // Intensity falloff: 1.0 -> 0.8 -> 0.6 -> 0.4 -> 0.25 -> 0.1
+    const intensities = [1.0, 0.8, 0.6, 0.4, 0.25, 0.1]
+    return intensities[distance] || 0
+  }
+
+  // Savitar color palette - icy white/silver-blue
+  const getLetterStyle = (intensity: number, wordIndex: number, letterIndex: number) => {
+    if (intensity === 0) {
+      // Check if letter has been passed
+      const isPassed = wordIndex < activeWordIndex ||
+        (wordIndex === activeWordIndex && letterIndex < activeLetterIndex - 5)
+
+      return {
+        color: isPassed ? '#94a3b8' : '#475569', // Lighter slate for passed, dark for upcoming
+        textShadow: 'none',
+        transform: 'none',
+        filter: 'none',
+      }
+    }
+
+    // Savitar colors: white core -> silver -> icy blue trail
+    const colors = {
+      core: '#ffffff',
+      silver: '#e2e8f0',
+      icyBlue: '#bae6fd',
+      paleBlue: '#7dd3fc',
+      deepIcy: '#38bdf8',
+    }
+
+    // Color based on intensity
+    let color: string
+    let textShadow: string
+    let scale: number
+
+    if (intensity === 1.0) {
+      // Active letter - bright white core
+      color = colors.core
+      textShadow = `
+        0 0 4px ${colors.core},
+        0 0 8px ${colors.core},
+        0 0 15px ${colors.silver},
+        0 0 25px ${colors.icyBlue},
+        0 0 40px ${colors.paleBlue},
+        0 0 60px ${colors.deepIcy}
+      `
+      scale = 1.08
+    } else if (intensity >= 0.8) {
+      // First trail - silver white
+      color = colors.silver
+      textShadow = `
+        0 0 3px ${colors.silver},
+        0 0 8px ${colors.icyBlue},
+        0 0 20px ${colors.paleBlue},
+        0 0 35px ${colors.deepIcy}
+      `
+      scale = 1.05
+    } else if (intensity >= 0.6) {
+      // Second trail - icy blue
+      color = colors.icyBlue
+      textShadow = `
+        0 0 3px ${colors.icyBlue},
+        0 0 12px ${colors.paleBlue},
+        0 0 25px ${colors.deepIcy}
+      `
+      scale = 1.03
+    } else if (intensity >= 0.4) {
+      // Third trail - pale blue
+      color = colors.paleBlue
+      textShadow = `
+        0 0 2px ${colors.paleBlue},
+        0 0 8px ${colors.deepIcy}
+      `
+      scale = 1.01
+    } else if (intensity >= 0.25) {
+      // Fourth trail - fading
+      color = colors.deepIcy
+      textShadow = `0 0 5px ${colors.deepIcy}`
+      scale = 1.0
+    } else {
+      // Fifth trail - barely visible
+      color = '#0ea5e9'
+      textShadow = '0 0 3px #0ea5e9'
+      scale = 1.0
+    }
+
+    return {
+      color,
+      textShadow,
+      transform: `scale(${scale})`,
+      filter: intensity >= 0.8 ? `brightness(${1 + intensity * 0.2})` : 'none',
+    }
+  }
 
   return (
-    <div className="relative overflow-hidden py-2">
-      {/* Lightning bolt SVG that follows */}
-      <div
-        className="absolute top-1/2 -translate-y-1/2 pointer-events-none transition-all duration-100 ease-linear z-10"
-        style={{
-          left: `${Math.min(Math.max(activeIndex, 0), words.length - 1) * (100 / words.length) + (100 / words.length / 2)}%`,
-          transform: 'translate(-50%, -50%)',
-          opacity: activeIndex >= 0 && activeIndex < words.length ? 1 : 0,
-        }}
-      >
-        {/* Lightning bolt glow */}
-        <div className="relative">
-          <svg
-            className="w-6 h-6 text-yellow-400 animate-pulse"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            style={{
-              filter: 'drop-shadow(0 0 8px #fbbf24) drop-shadow(0 0 16px #f59e0b)',
-            }}
-          >
-            <path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" />
-          </svg>
-        </div>
+    <div className="relative py-4 select-none">
+      <div className="flex items-center justify-center gap-3 md:gap-5 font-mono text-sm md:text-base tracking-widest">
+        {words.map((word, wordIndex) => (
+          <span key={wordIndex} className="relative inline-flex">
+            {/* Separator before word (except first) */}
+            {wordIndex > 0 && (
+              <span className="text-slate-600 mx-2 md:mx-3">//</span>
+            )}
+
+            {/* Word letters */}
+            {word.split('').map((letter, letterIndex) => {
+              const intensity = getTrailIntensity(wordIndex, letterIndex)
+              const style = getLetterStyle(intensity, wordIndex, letterIndex)
+
+              return (
+                <span
+                  key={letterIndex}
+                  className="relative inline-block transition-all duration-100 ease-out"
+                  style={{
+                    color: style.color,
+                    textShadow: style.textShadow,
+                    transform: style.transform,
+                    filter: style.filter,
+                  }}
+                >
+                  {letter}
+                </span>
+              )
+            })}
+          </span>
+        ))}
       </div>
-
-      {/* Words with lightning effect */}
-      <div className="flex items-center justify-center gap-2 md:gap-3">
-        {words.map((word, index) => {
-          const isActive = index === activeIndex
-          const isTrail1 = index === activeIndex - 1
-          const isTrail2 = index === activeIndex - 2
-          const hasEffect = isActive || isTrail1 || isTrail2
-
-          return (
-            <span
-              key={index}
-              className="relative transition-all duration-75"
-              style={{
-                color: isActive
-                  ? '#fbbf24' // Yellow for active
-                  : isTrail1
-                    ? '#f59e0b' // Orange for trail 1
-                    : isTrail2
-                      ? '#d97706' // Darker orange for trail 2
-                      : '#475569', // Default slate
-                textShadow: isActive
-                  ? '0 0 10px #fbbf24, 0 0 20px #f59e0b, 0 0 30px #d97706, 0 0 40px #b45309'
-                  : isTrail1
-                    ? '0 0 8px #f59e0b, 0 0 16px #d97706'
-                    : isTrail2
-                      ? '0 0 4px #d97706'
-                      : 'none',
-                transform: hasEffect ? 'scale(1.05)' : 'scale(1)',
-              }}
-            >
-              {/* Lightning spark particles */}
-              {isActive && (
-                <>
-                  <span
-                    className="absolute -top-1 -left-1 w-1 h-1 bg-yellow-300 rounded-full animate-ping"
-                    style={{ animationDuration: '0.3s' }}
-                  />
-                  <span
-                    className="absolute -bottom-1 -right-1 w-1 h-1 bg-yellow-300 rounded-full animate-ping"
-                    style={{ animationDuration: '0.4s' }}
-                  />
-                </>
-              )}
-              {word}
-            </span>
-          )
-        })}
-      </div>
-
-      {/* Lightning trail line */}
-      <div
-        className="absolute top-1/2 h-[2px] bg-gradient-to-r from-transparent via-yellow-400 to-transparent transition-all duration-100 ease-linear"
-        style={{
-          left: 0,
-          width: activeIndex >= 0 ? `${(activeIndex / words.length) * 100}%` : '0%',
-          opacity: activeIndex >= 0 ? 0.6 : 0,
-          boxShadow: '0 0 8px #fbbf24, 0 0 16px #f59e0b',
-          transform: 'translateY(-50%)',
-        }}
-      />
     </div>
   )
 }
