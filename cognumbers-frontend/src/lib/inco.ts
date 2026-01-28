@@ -81,6 +81,12 @@ interface DecryptResult {
   plaintext?: {
     value?: bigint
   }
+  covalidatorSignatures?: Uint8Array[]
+}
+
+export interface RevealResult {
+  value: bigint
+  signatures: `0x${string}`[]
 }
 
 export async function decryptHandle(
@@ -145,4 +151,61 @@ export async function decryptMultipleHandles(
   }
 
   return handles.map(() => null)
+}
+
+/**
+ * Reveal multiple handles that have been marked as public via e.reveal()
+ * Returns both plaintext values AND covalidator signatures for on-chain verification
+ */
+export async function revealWithSignatures(
+  handles: `0x${string}`[]
+): Promise<RevealResult[]> {
+  console.log('[revealWithSignatures] Starting reveal for', handles.length, 'handles')
+
+  const lightning = await getIncoLightning()
+
+  const maxRetries = 5
+  const baseDelay = 2000
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[revealWithSignatures] Attempt ${attempt}/${maxRetries}`)
+
+      // attestedReveal works on public (revealed) handles - no wallet signature needed
+      const results = await lightning.attestedReveal(handles) as DecryptResult[]
+
+      console.log('[revealWithSignatures] Got results:', results.length)
+
+      return results.map((r: DecryptResult, i: number) => {
+        const value = r?.plaintext?.value ?? 0n
+        const sigs = r?.covalidatorSignatures ?? []
+
+        // Convert Uint8Array signatures to hex strings
+        const hexSigs = sigs.map((sig: Uint8Array) => {
+          const hex = Array.from(sig).map(b => b.toString(16).padStart(2, '0')).join('')
+          return `0x${hex}` as `0x${string}`
+        })
+
+        console.log(`[revealWithSignatures] Handle ${i}: value=${value}, signatures=${hexSigs.length}`)
+
+        return {
+          value,
+          signatures: hexSigs,
+        }
+      })
+    } catch (err) {
+      console.error(`[revealWithSignatures] Attempt ${attempt} failed:`, err)
+
+      if (attempt === maxRetries) {
+        console.error('[revealWithSignatures] All retries exhausted')
+        throw err
+      }
+
+      const delay = baseDelay * Math.pow(1.5, attempt - 1)
+      console.log(`[revealWithSignatures] Retrying in ${delay}ms...`)
+      await new Promise((resolve) => setTimeout(resolve, delay))
+    }
+  }
+
+  throw new Error('Failed to reveal handles after all retries')
 }

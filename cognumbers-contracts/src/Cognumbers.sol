@@ -502,6 +502,13 @@ contract Cognumbers is ReentrancyGuard, Ownable, Pausable {
     function _finalizeGame(uint256 _gameId) internal {
         Game storage game = games[_gameId];
         game.status = GameStatus.Calculating;
+
+        // Reveal all player choices so they can be decrypted publicly
+        address[] storage players = gamePlayers[_gameId];
+        for (uint256 i = 0; i < players.length; i++) {
+            e.reveal(playerChoices[_gameId][players[i]]);
+        }
+
         emit GameFinalized(_gameId, game.playerCount, game.prizePool);
     }
 

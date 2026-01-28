@@ -8,11 +8,13 @@ import {
   useHasJoined,
   useJoinGame,
   useFinalizeGame,
+  useResolveWinner,
+  usePlayerChoiceHandles,
   formatEntryFee,
   getTimeRemaining,
   isGameExpired,
 } from '../hooks/useContract'
-import { useEncrypt } from '../hooks/useInco'
+import { useEncrypt, useReveal } from '../hooks/useInco'
 import { NumberSelector } from '../components/NumberSelector'
 import { StatusBadge } from '../components/StatusBadge'
 import { LoadingSpinner } from '../components/LoadingSpinner'
@@ -46,11 +48,22 @@ export function GameDetail() {
   } = useFinalizeGame()
 
   const { encrypt, isEncrypting, error: encryptError } = useEncrypt()
+  const { reveal, isRevealing, error: revealError } = useReveal()
+  const { fetchHandles, isLoading: isFetchingHandles } = usePlayerChoiceHandles()
+  const {
+    resolveWinner,
+    isPending: isResolving,
+    isConfirming: isResolveConfirming,
+    isSuccess: isResolveSuccess,
+    error: resolveError,
+  } = useResolveWinner()
 
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
   const [timeRemaining, setTimeRemaining] = useState('')
   const [encryptionStatus, setEncryptionStatus] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [resolutionStatus, setResolutionStatus] = useState<string | null>(null)
+  const [revealedChoices, setRevealedChoices] = useState<{ player: string; choice: bigint }[] | null>(null)
 
   const handleShare = useCallback(() => {
     const url = window.location.href
@@ -152,6 +165,71 @@ export function GameDetail() {
     if (!gameId) return
     finalizeGame(gameId)
   }
+
+  const handleResolve = async () => {
+    if (!gameId || !players || players.length === 0) {
+      console.log('[RESOLVE] Missing data:', { gameId, players })
+      return
+    }
+
+    try {
+      setResolutionStatus('FETCHING PLAYER HANDLES...')
+      console.log('[RESOLVE] Starting resolution for game', gameId.toString())
+
+      // Step 1: Fetch all player choice handles
+      const handles = await fetchHandles(gameId, players as `0x${string}`[])
+      console.log('[RESOLVE] Got handles:', handles)
+
+      if (handles.length === 0 || handles.some(h => h === '0x0000000000000000000000000000000000000000000000000000000000000000')) {
+        setResolutionStatus('ERROR: Could not fetch player handles')
+        return
+      }
+
+      // Step 2: Reveal all handles (get decrypted values + signatures)
+      setResolutionStatus('DECRYPTING CHOICES WITH ATTESTATION...')
+      const results = await reveal(handles)
+
+      if (!results || results.length !== players.length) {
+        setResolutionStatus('ERROR: Decryption failed')
+        return
+      }
+
+      console.log('[RESOLVE] Revealed values:', results)
+
+      // Show the revealed choices
+      const revealed = results.map((r, i) => ({
+        player: players[i],
+        choice: r.value,
+      }))
+      setRevealedChoices(revealed)
+
+      // Step 3: Prepare data for contract call
+      const decryptedChoices = results.map(r => r.value)
+      const signatures = results.map(r => r.signatures)
+
+      console.log('[RESOLVE] Calling resolveWinner with:', {
+        gameId: gameId.toString(),
+        choices: decryptedChoices.map(c => c.toString()),
+        signaturesCount: signatures.map(s => s.length),
+      })
+
+      // Step 4: Call resolveWinner on contract
+      setResolutionStatus('SUBMITTING TO BLOCKCHAIN...')
+      resolveWinner(gameId, decryptedChoices, signatures)
+
+    } catch (err) {
+      console.error('[RESOLVE] Error:', err)
+      setResolutionStatus('ERROR: ' + (err instanceof Error ? err.message : String(err)))
+    }
+  }
+
+  // Clear resolution status on success
+  useEffect(() => {
+    if (isResolveSuccess) {
+      setResolutionStatus(null)
+      refetch()
+    }
+  }, [isResolveSuccess, refetch])
 
   if (isLoading) {
     return (
@@ -385,13 +463,65 @@ export function GameDetail() {
 
           {gameStatus === GameStatus.Calculating && (
             <div className="cyber-card p-6 border-yellow-500/50">
-              <div className="flex items-center gap-3 text-yellow-400">
-                <LoadingSpinner size="sm" />
-                <span className="font-mono">CALCULATING WINNER...</span>
-              </div>
-              <p className="text-slate-400 font-mono text-sm mt-2">
-                Waiting for attested decryptions to determine the winner.
+              <h2 className="text-lg font-bold text-yellow-400 mb-4 font-['Orbitron']">
+                RESOLVE WINNER
+              </h2>
+              <p className="text-slate-400 font-mono text-sm mb-4">
+                Game finalized. Decrypt choices and determine the winner.
               </p>
+
+              {revealedChoices && (
+                <div className="mb-4 p-3 border border-cyan-500/30 bg-cyan-500/5">
+                  <div className="text-xs text-slate-500 font-mono mb-2">REVEALED CHOICES:</div>
+                  <div className="space-y-1">
+                    {revealedChoices.map((rc, i) => (
+                      <div key={i} className="flex justify-between text-sm font-mono">
+                        <span className="text-slate-400">{shortenAddress(rc.player as `0x${string}`)}</span>
+                        <span className="text-cyan-400">{rc.choice.toString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {resolutionStatus && (
+                <div className="mb-4 p-3 border border-yellow-500/50 bg-yellow-500/10 text-yellow-400 text-sm font-mono flex items-center gap-2">
+                  <LoadingSpinner size="sm" />
+                  {resolutionStatus}
+                </div>
+              )}
+
+              {(resolveError || revealError) && (
+                <div className="mb-4 p-3 border border-red-500/50 bg-red-500/10 text-red-400 text-sm font-mono">
+                  ERROR: {resolveError?.message || revealError?.message}
+                </div>
+              )}
+
+              {isResolveSuccess && (
+                <div className="mb-4 p-3 border border-green-500/50 bg-green-500/10 text-green-400 text-sm font-mono">
+                  WINNER RESOLVED SUCCESSFULLY!
+                </div>
+              )}
+
+              <button
+                onClick={handleResolve}
+                disabled={isRevealing || isFetchingHandles || isResolving || isResolveConfirming}
+                className="cyber-button w-full"
+              >
+                {isRevealing || isFetchingHandles ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <LoadingSpinner size="sm" />
+                    DECRYPTING...
+                  </span>
+                ) : isResolving || isResolveConfirming ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <LoadingSpinner size="sm" />
+                    RESOLVING...
+                  </span>
+                ) : (
+                  'RESOLVE WINNER'
+                )}
+              </button>
             </div>
           )}
 

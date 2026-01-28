@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useAccount, useWalletClient } from 'wagmi'
-import { encryptNumber, decryptHandle, decryptMultipleHandles } from '../lib/inco'
+import { encryptNumber, decryptHandle, decryptMultipleHandles, revealWithSignatures, type RevealResult } from '../lib/inco'
 
 export function useEncrypt() {
   const { address } = useAccount()
@@ -104,6 +104,47 @@ export function useDecrypt() {
     decrypt,
     decryptMultiple,
     isDecrypting,
+    error,
+  }
+}
+
+/**
+ * Hook to reveal publicly accessible encrypted values with signatures
+ * Use this after a game has been finalized (e.reveal called on-chain)
+ */
+export function useReveal() {
+  const [isRevealing, setIsRevealing] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  const reveal = useCallback(
+    async (handles: `0x${string}`[]): Promise<RevealResult[] | null> => {
+      if (handles.length === 0) {
+        return []
+      }
+
+      setIsRevealing(true)
+      setError(null)
+
+      try {
+        console.log('[useReveal] Revealing', handles.length, 'handles')
+        const results = await revealWithSignatures(handles)
+        console.log('[useReveal] Reveal successful:', results.length, 'results')
+        return results
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err))
+        setError(error)
+        console.error('[useReveal] Reveal failed:', error)
+        return null
+      } finally {
+        setIsRevealing(false)
+      }
+    },
+    []
+  )
+
+  return {
+    reveal,
+    isRevealing,
     error,
   }
 }

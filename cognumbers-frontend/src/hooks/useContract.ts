@@ -1,5 +1,6 @@
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, usePublicClient } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
+import { useCallback, useState } from 'react'
 import { CONTRACT_ADDRESS } from '../config/wagmi'
 import { COGNUMBERS_ABI } from '../config/contract'
 
@@ -237,6 +238,59 @@ export function useCanClaimRefund(gameId: bigint | undefined, address: `0x${stri
       enabled: gameId !== undefined && !!address,
     },
   })
+}
+
+/**
+ * Hook to fetch all player choice handles for a game
+ * Used for revealing/decrypting choices after game finalization
+ */
+export function usePlayerChoiceHandles() {
+  const publicClient = usePublicClient()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  const fetchHandles = useCallback(
+    async (gameId: bigint, players: `0x${string}`[]): Promise<`0x${string}`[]> => {
+      if (!publicClient || players.length === 0) {
+        return []
+      }
+
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        console.log('[usePlayerChoiceHandles] Fetching handles for', players.length, 'players')
+
+        const handlePromises = players.map((player) =>
+          publicClient.readContract({
+            address: CONTRACT_ADDRESS,
+            abi: COGNUMBERS_ABI,
+            functionName: 'getPlayerChoiceHandle',
+            args: [gameId, player],
+          })
+        )
+
+        const handles = await Promise.all(handlePromises)
+        console.log('[usePlayerChoiceHandles] Got handles:', handles)
+
+        return handles as `0x${string}`[]
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err))
+        setError(error)
+        console.error('[usePlayerChoiceHandles] Error:', error)
+        return []
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [publicClient]
+  )
+
+  return {
+    fetchHandles,
+    isLoading,
+    error,
+  }
 }
 
 export function formatEntryFee(entryFee: bigint): string {
