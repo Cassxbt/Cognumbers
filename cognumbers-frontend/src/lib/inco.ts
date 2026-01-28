@@ -25,11 +25,35 @@ export async function encryptNumber(
     const lightning = await getIncoLightning()
     console.log('[encryptNumber] Got Lightning instance')
 
+    // Debug: Show full deployment info
+    const lightningAny = lightning as {
+      _deployment?: {
+        name?: string
+        executorAddress?: string
+        chainId?: number
+        pepper?: string
+        version?: { major?: number; minor?: number; patch?: number }
+      }
+      executorAddress?: string
+      chainId?: bigint
+    }
+    console.log('[encryptNumber] Lightning deployment details:', {
+      name: lightningAny._deployment?.name,
+      executorAddress: lightningAny._deployment?.executorAddress,
+      chainId: lightningAny._deployment?.chainId,
+      pepper: lightningAny._deployment?.pepper,
+      version: lightningAny._deployment?.version,
+    })
+    console.log('[encryptNumber] Lightning instance values:', {
+      executorAddress: lightningAny.executorAddress,
+      chainId: lightningAny.chainId?.toString(),
+    })
+
     console.log('[encryptNumber] Calling lightning.encrypt with:', {
       value: BigInt(value).toString(),
       accountAddress,
       dappAddress: CONTRACT_ADDRESS,
-      handleType: 'euint256',
+      handleType: 'euint256 (8)',
     })
 
     const ciphertext = await lightning.encrypt(BigInt(value), {
@@ -38,7 +62,29 @@ export async function encryptNumber(
       handleType: handleTypes.euint256,
     })
 
-    console.log('[encryptNumber] Encryption successful, ciphertext:', ciphertext?.slice(0, 66) + '...')
+    console.log('[encryptNumber] Encryption successful!')
+    console.log('[encryptNumber] Ciphertext length:', ciphertext?.length)
+    console.log('[encryptNumber] First 74 chars (hex):', ciphertext?.slice(0, 74))
+
+    // Parse version and handle from ciphertext
+    if (ciphertext) {
+      const versionHex = ciphertext.slice(2, 10) // Remove '0x', take first 8 hex chars (4 bytes)
+      const version = parseInt(versionHex, 16)
+      const handleHex = ciphertext.slice(10, 74) // Next 64 hex chars (32 bytes)
+
+      console.log('[encryptNumber] Parsed ciphertext structure:')
+      console.log('  - Version (hex):', '0x' + versionHex)
+      console.log('  - Version (decimal):', version)
+      console.log('  - Handle (hex):', '0x' + handleHex)
+      console.log('  - Ciphertext start:', ciphertext.slice(74, 138) + '...')
+
+      // Verify the values match expected
+      console.log('[encryptNumber] Validation:')
+      console.log('  - Expected version: 1, Actual:', version, version === 1 ? '✓' : '✗')
+      console.log('  - Expected executor: 0x168FDc3Ae19A5d5b03614578C58974FF30FCBe92')
+      console.log('  - Actual executor:', lightningAny.executorAddress)
+    }
+
     return ciphertext as `0x${string}`
   } catch (err) {
     console.error('[encryptNumber] Encryption error:', err)
