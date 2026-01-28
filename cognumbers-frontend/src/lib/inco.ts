@@ -40,9 +40,10 @@ export async function encryptNumber(
       handleType: 'euint256 (8)',
     })
 
+    // Ensure addresses are lowercase for consistent handle computation
     const ciphertext = await lightning.encrypt(BigInt(value), {
-      accountAddress,
-      dappAddress: CONTRACT_ADDRESS,
+      accountAddress: accountAddress.toLowerCase() as `0x${string}`,
+      dappAddress: CONTRACT_ADDRESS.toLowerCase() as `0x${string}`,
       handleType: handleTypes.euint256,
     })
 

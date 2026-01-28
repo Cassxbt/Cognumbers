@@ -9,5 +9,5 @@ export const config = getDefaultConfig({
 })
 
 // Original full contract: 0xe3aab2f36601cec8d217da5497fc3fe00ed22538
-// Minimal test contract for debugging
-export const CONTRACT_ADDRESS = '0x4aD54bAFb404e66988828EC3D1193Da317Dc2Ebb' as const
+// Minimal test contract for debugging (lowercase for SDK compatibility)
+export const CONTRACT_ADDRESS = '0x4ad54bafb404e66988828ec3d1193da317dc2ebb' as const
