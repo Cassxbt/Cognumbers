@@ -166,15 +166,17 @@ export function GameDetail() {
   }
 
   const expired = isGameExpired(game.deadline)
+  // Minimal contract: status defaults to 0 (Open), use gameId from URL
+  const gameStatus = (game as { status?: number }).status ?? GameStatus.Open
   const canJoin =
     isConnected &&
     !hasJoined &&
-    game.status === GameStatus.Open &&
+    gameStatus === GameStatus.Open &&
     !expired &&
     Number(game.playerCount) < MAX_PLAYERS
   const canFinalize =
     isConnected &&
-    game.status === GameStatus.Open &&
+    gameStatus === GameStatus.Open &&
     expired &&
     Number(game.playerCount) > 0
 
@@ -193,10 +195,10 @@ export function GameDetail() {
               <div>
                 <div className="text-xs text-slate-500 font-mono mb-1">GAME</div>
                 <h1 className="text-4xl font-bold text-white font-['Orbitron']">
-                  #{game.gameId.toString().padStart(4, '0')}
+                  #{(gameId ?? 0n).toString().padStart(4, '0')}
                 </h1>
               </div>
-              <StatusBadge status={game.status as GameStatus} />
+              <StatusBadge status={gameStatus as GameStatus} />
             </div>
 
             <div className="grid grid-cols-2 gap-6">
@@ -233,14 +235,14 @@ export function GameDetail() {
                 <div>
                   <div className="text-xs text-slate-500 font-mono mb-2">TIME REMAINING</div>
                   <div className={`text-2xl font-mono ${expired ? 'text-red-400' : 'text-white'}`}>
-                    {game.status === GameStatus.Open ? timeRemaining || getTimeRemaining(game.deadline) : '--:--'}
+                    {gameStatus === GameStatus.Open ? timeRemaining || getTimeRemaining(game.deadline) : '--:--'}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {game.status === GameStatus.Open && canJoin && (
+          {gameStatus === GameStatus.Open && canJoin && (
             <div className="cyber-card p-6">
               <h2 className="text-lg font-bold text-white mb-4 font-['Orbitron']">
                 JOIN GAME
@@ -295,7 +297,7 @@ export function GameDetail() {
             </div>
           )}
 
-          {hasJoined && game.status === GameStatus.Open && (
+          {hasJoined && gameStatus === GameStatus.Open && (
             <div className="cyber-card p-6">
               <div className="flex items-center gap-3 text-green-400">
                 <div className="w-3 h-3 bg-green-400 animate-pulse" />
@@ -339,46 +341,9 @@ export function GameDetail() {
             </div>
           )}
 
-          {game.status === GameStatus.Finished && (
-            <div className="cyber-card p-6">
-              <h2 className="text-lg font-bold text-white mb-4 font-['Orbitron']">
-                GAME RESULTS
-              </h2>
-              {game.winner !== '0x0000000000000000000000000000000000000000' ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border border-green-500/30 bg-green-500/5">
-                    <div>
-                      <div className="text-xs text-slate-500 font-mono mb-1">WINNER</div>
-                      <div className="text-green-400 font-mono">
-                        {shortenAddress(game.winner)}
-                        {game.winner === address && (
-                          <span className="ml-2 text-yellow-400">(YOU!)</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-slate-500 font-mono mb-1">WINNING NUMBER</div>
-                      <div className="text-3xl font-bold text-yellow-400 font-['Orbitron']">
-                        {game.winningNumber.toString()}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xs text-slate-500 font-mono mb-1">PRIZE WON</div>
-                    <div className="text-2xl text-green-400 font-mono">
-                      {formatPrize(game.entryFee, game.playerCount)} ETH
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center text-slate-400 font-mono">
-                  NO WINNER - NO UNIQUE NUMBER FOUND
-                </div>
-              )}
-            </div>
-          )}
+          {/* Winner section hidden for minimal contract test */}
 
-          {!isConnected && game.status === GameStatus.Open && (
+          {!isConnected && gameStatus === GameStatus.Open && (
             <div className="cyber-card p-6 text-center">
               <p className="text-slate-400 font-mono mb-4">CONNECT WALLET TO JOIN</p>
               <ConnectButton />
