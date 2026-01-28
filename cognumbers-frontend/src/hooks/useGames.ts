@@ -40,25 +40,29 @@ export function useAllGames() {
 
       const results = await Promise.all(gamePromises)
 
-      const gamesData: Game[] = results.map((result, index) => {
-        // Minimal contract returns simpler struct: {creator, entryFee, deadline, playerCount}
+      const gamesData: Game[] = results.map((result) => {
+        // Full contract returns complete Game struct
         const r = result as {
+          gameId: bigint
           creator: `0x${string}`
+          status: number
           entryFee: bigint
           deadline: bigint
           playerCount: bigint
+          winner: `0x${string}`
+          winningNumber: bigint
+          prizePool: bigint
         }
-        // Map to full Game type with defaults for missing fields
         return {
-          gameId: BigInt(index),
+          gameId: r.gameId,
           creator: r.creator,
-          status: 0 as GameStatus, // Default to Open for minimal contract
+          status: r.status as GameStatus,
           entryFee: r.entryFee,
           deadline: r.deadline,
           playerCount: r.playerCount,
-          winner: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-          winningNumber: 0n,
-          prizePool: r.entryFee * r.playerCount, // Calculate prizePool
+          winner: r.winner,
+          winningNumber: r.winningNumber,
+          prizePool: r.prizePool,
         }
       })
 

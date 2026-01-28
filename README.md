@@ -348,11 +348,15 @@ function claimRefund(uint256 _gameId) external nonReentrant {
 
 ## Smart Contract
 
-**Deployed Address:** `0x2f3268bd8ff551b770fd4830c1d2b68ef1a9e5e4`
+**Deployed Address:** `0x2b4482CaCf946DcEbB7548E3F250F00d3124a013`
 
 **Network:** Base Sepolia (Chain ID: 84532)
 
-**View on Basescan:** [Link](https://sepolia.basescan.org/address/0x2f3268bd8ff551b770fd4830c1d2b68ef1a9e5e4)
+**Package Versions:**
+- `@inco/js`: 0.7.11
+- `@inco/lightning`: 0.7.11
+
+**View on Basescan:** [Link](https://sepolia.basescan.org/address/0x2b4482CaCf946DcEbB7548E3F250F00d3124a013)
 
 ### Key Functions
 

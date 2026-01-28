@@ -152,7 +152,6 @@ export const COGNUMBERS_ABI = [
   },
 
   // ============ View Functions ============
-  // Minimal contract version of getGame (for testing)
   {
     type: 'function',
     name: 'getGame',
@@ -162,10 +161,15 @@ export const COGNUMBERS_ABI = [
         name: '',
         type: 'tuple',
         components: [
+          { name: 'gameId', type: 'uint256' },
           { name: 'creator', type: 'address' },
+          { name: 'status', type: 'uint8' },
           { name: 'entryFee', type: 'uint256' },
           { name: 'deadline', type: 'uint256' },
           { name: 'playerCount', type: 'uint256' },
+          { name: 'winner', type: 'address' },
+          { name: 'winningNumber', type: 'uint256' },
+          { name: 'prizePool', type: 'uint256' },
         ],
       },
     ],
@@ -205,16 +209,20 @@ export const COGNUMBERS_ABI = [
     outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'view',
   },
-  // Minimal contract version of games mapping (for testing)
   {
     type: 'function',
     name: 'games',
     inputs: [{ name: '', type: 'uint256' }],
     outputs: [
+      { name: 'gameId', type: 'uint256' },
       { name: 'creator', type: 'address' },
+      { name: 'status', type: 'uint8' },
       { name: 'entryFee', type: 'uint256' },
       { name: 'deadline', type: 'uint256' },
       { name: 'playerCount', type: 'uint256' },
+      { name: 'winner', type: 'address' },
+      { name: 'winningNumber', type: 'uint256' },
+      { name: 'prizePool', type: 'uint256' },
     ],
     stateMutability: 'view',
   },

@@ -8,6 +8,5 @@ export const config = getDefaultConfig({
   ssr: false,
 })
 
-// Original full contract: 0xe3aab2f36601cec8d217da5497fc3fe00ed22538
-// Minimal test contract (v0.7.11) for debugging
-export const CONTRACT_ADDRESS = '0x2AEe6ECD379295891d2AEab5E8622c8a798922DA' as const
+// Full production contract (v0.7.11) - deployed Jan 28, 2026
+export const CONTRACT_ADDRESS = '0x2b4482CaCf946DcEbB7548E3F250F00d3124a013' as const
