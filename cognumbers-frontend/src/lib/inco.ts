@@ -25,26 +25,10 @@ export async function encryptNumber(
     const lightning = await getIncoLightning()
     console.log('[encryptNumber] Got Lightning instance')
 
-    // Debug: Show full deployment info
-    const lightningAny = lightning as {
-      _deployment?: {
-        name?: string
-        executorAddress?: string
-        chainId?: number
-        pepper?: string
-        version?: { major?: number; minor?: number; patch?: number }
-      }
-      executorAddress?: string
-      chainId?: bigint
-    }
-    console.log('[encryptNumber] Lightning deployment details:', {
-      name: lightningAny._deployment?.name,
-      executorAddress: lightningAny._deployment?.executorAddress,
-      chainId: lightningAny._deployment?.chainId,
-      pepper: lightningAny._deployment?.pepper,
-      version: lightningAny._deployment?.version,
-    })
-    console.log('[encryptNumber] Lightning instance values:', {
+    // Debug: Show deployment info using public properties
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lightningAny = lightning as any
+    console.log('[encryptNumber] Lightning instance:', {
       executorAddress: lightningAny.executorAddress,
       chainId: lightningAny.chainId?.toString(),
     })
@@ -80,9 +64,9 @@ export async function encryptNumber(
 
       // Verify the values match expected
       console.log('[encryptNumber] Validation:')
-      console.log('  - Expected version: 1, Actual:', version, version === 1 ? '✓' : '✗')
+      console.log('  - Expected version: 1, Actual:', version, version === 1 ? 'OK' : 'MISMATCH')
+      console.log('  - Executor used:', lightningAny.executorAddress)
       console.log('  - Expected executor: 0x168FDc3Ae19A5d5b03614578C58974FF30FCBe92')
-      console.log('  - Actual executor:', lightningAny.executorAddress)
     }
 
     return ciphertext as `0x${string}`
