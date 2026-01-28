@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '../lib/utils'
+import { LightningFooter } from './LightningFooter'
 
 const navItems = [
   { path: '/', label: 'HOME' },
@@ -175,8 +176,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       <footer className="relative z-10 border-t border-slate-800 py-6 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 text-center text-slate-600 text-sm font-mono">
-          <p>COGNUMBERS // INCO // CASSXBT</p>
+        <div className="max-w-7xl mx-auto px-4 text-center text-sm font-mono">
+          <LightningFooter />
         </div>
       </footer>
     </div>
