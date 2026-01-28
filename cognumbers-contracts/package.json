@@ -14,7 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@inco/lightning": "^0.8.0-devnet-5",
+    "@inco/lightning": "^0.7.10",
     "@openzeppelin/contracts": "^5.4.0"
   }
 }
