@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
@@ -50,6 +50,15 @@ export function GameDetail() {
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
   const [timeRemaining, setTimeRemaining] = useState('')
   const [encryptionStatus, setEncryptionStatus] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  const handleShare = useCallback(() => {
+    const url = window.location.href
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }, [])
 
   useEffect(() => {
     if (!game) return
@@ -198,7 +207,15 @@ export function GameDetail() {
                   #{(gameId ?? 0n).toString().padStart(4, '0')}
                 </h1>
               </div>
-              <StatusBadge status={gameStatus as GameStatus} />
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleShare}
+                  className="px-3 py-1.5 border border-slate-600 hover:border-cyan-400 text-slate-400 hover:text-cyan-400 font-mono text-xs transition-colors"
+                >
+                  {copied ? 'COPIED!' : 'SHARE'}
+                </button>
+                <StatusBadge status={gameStatus as GameStatus} />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-6">
@@ -341,7 +358,53 @@ export function GameDetail() {
             </div>
           )}
 
-          {/* Winner section hidden for minimal contract test */}
+          {gameStatus === GameStatus.Finished && game.winner !== '0x0000000000000000000000000000000000000000' && (
+            <div className="cyber-card p-6 border-green-500/50">
+              <h2 className="text-lg font-bold text-green-400 mb-4 font-['Orbitron']">
+                WINNER
+              </h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 font-mono">ADDRESS</span>
+                  <span className={`font-mono ${game.winner === address ? 'text-green-400' : 'text-white'}`}>
+                    {shortenAddress(game.winner)}
+                    {game.winner === address && ' (YOU!)'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 font-mono">WINNING NUMBER</span>
+                  <span className="text-2xl text-cyan-400 font-mono">{game.winningNumber.toString()}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 font-mono">PRIZE WON</span>
+                  <span className="text-2xl text-green-400 font-mono">{formatPrize(game.entryFee, game.playerCount)} ETH</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {gameStatus === GameStatus.Calculating && (
+            <div className="cyber-card p-6 border-yellow-500/50">
+              <div className="flex items-center gap-3 text-yellow-400">
+                <LoadingSpinner size="sm" />
+                <span className="font-mono">CALCULATING WINNER...</span>
+              </div>
+              <p className="text-slate-400 font-mono text-sm mt-2">
+                Waiting for attested decryptions to determine the winner.
+              </p>
+            </div>
+          )}
+
+          {gameStatus === GameStatus.Cancelled && (
+            <div className="cyber-card p-6 border-red-500/50">
+              <h2 className="text-lg font-bold text-red-400 mb-2 font-['Orbitron']">
+                GAME CANCELLED
+              </h2>
+              <p className="text-slate-400 font-mono text-sm">
+                This game was cancelled. Players can claim refunds.
+              </p>
+            </div>
+          )}
 
           {!isConnected && gameStatus === GameStatus.Open && (
             <div className="cyber-card p-6 text-center">
