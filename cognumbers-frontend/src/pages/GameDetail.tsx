@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useAccount } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
@@ -20,6 +20,37 @@ import { StatusBadge } from '../components/StatusBadge'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { GameStatus, MAX_PLAYERS } from '../types/game'
 import { shortenAddress, formatPrize } from '../lib/utils'
+
+// Calculate winner using minimum unique number rule
+function calculateWinner(choices: { player: string; choice: bigint }[]): {
+  winnerAddress: string | null
+  winningNumber: bigint | null
+} {
+  if (choices.length === 0) return { winnerAddress: null, winningNumber: null }
+
+  // Count occurrences of each number
+  const counts = new Map<string, number>()
+  for (const { choice } of choices) {
+    const key = choice.toString()
+    counts.set(key, (counts.get(key) || 0) + 1)
+  }
+
+  // Find unique numbers (count === 1) and get the minimum
+  let minUnique: bigint | null = null
+  let winner: string | null = null
+
+  for (const { player, choice } of choices) {
+    const count = counts.get(choice.toString()) || 0
+    if (count === 1) {
+      if (minUnique === null || choice < minUnique) {
+        minUnique = choice
+        winner = player
+      }
+    }
+  }
+
+  return { winnerAddress: winner, winningNumber: minUnique }
+}
 
 export function GameDetail() {
   const { id } = useParams<{ id: string }>()
@@ -64,6 +95,12 @@ export function GameDetail() {
   const [copied, setCopied] = useState(false)
   const [resolutionStatus, setResolutionStatus] = useState<string | null>(null)
   const [revealedChoices, setRevealedChoices] = useState<{ player: string; choice: bigint }[] | null>(null)
+
+  // Calculate winner from revealed choices
+  const calculatedWinner = useMemo(() => {
+    if (!revealedChoices) return { winnerAddress: null, winningNumber: null }
+    return calculateWinner(revealedChoices)
+  }, [revealedChoices])
 
   const handleShare = useCallback(() => {
     const url = window.location.href
@@ -473,14 +510,50 @@ export function GameDetail() {
               {revealedChoices && (
                 <div className="mb-4 p-3 border border-cyan-500/30 bg-cyan-500/5">
                   <div className="text-xs text-slate-500 font-mono mb-2">REVEALED CHOICES:</div>
-                  <div className="space-y-1">
-                    {revealedChoices.map((rc, i) => (
-                      <div key={i} className="flex justify-between text-sm font-mono">
-                        <span className="text-slate-400">{shortenAddress(rc.player as `0x${string}`)}</span>
-                        <span className="text-cyan-400">{rc.choice.toString()}</span>
-                      </div>
-                    ))}
+                  <div className="space-y-2">
+                    {revealedChoices.map((rc, i) => {
+                      const isWinner = calculatedWinner.winnerAddress === rc.player
+                      return (
+                        <div
+                          key={i}
+                          className={`flex justify-between items-center text-sm font-mono p-2 ${
+                            isWinner
+                              ? 'border border-green-500/50 bg-green-500/10'
+                              : 'border border-transparent'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {isWinner && (
+                              <span className="text-green-400 text-xs">★</span>
+                            )}
+                            <span className={isWinner ? 'text-green-400' : 'text-slate-400'}>
+                              {shortenAddress(rc.player as `0x${string}`)}
+                              {rc.player === address && ' (YOU)'}
+                            </span>
+                          </div>
+                          <span className={isWinner ? 'text-green-400 font-bold' : 'text-cyan-400'}>
+                            {rc.choice.toString()}
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
+                  {calculatedWinner.winnerAddress && (
+                    <div className="mt-3 pt-3 border-t border-cyan-500/30">
+                      <div className="text-xs text-green-400 font-mono">
+                        WINNER: {shortenAddress(calculatedWinner.winnerAddress as `0x${string}`)}
+                        {calculatedWinner.winnerAddress === address && ' (YOU!)'}
+                        {' '}with number {calculatedWinner.winningNumber?.toString()}
+                      </div>
+                    </div>
+                  )}
+                  {!calculatedWinner.winnerAddress && revealedChoices.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-cyan-500/30">
+                      <div className="text-xs text-yellow-400 font-mono">
+                        NO WINNER - No unique numbers found
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -498,8 +571,23 @@ export function GameDetail() {
               )}
 
               {isResolveSuccess && (
-                <div className="mb-4 p-3 border border-green-500/50 bg-green-500/10 text-green-400 text-sm font-mono">
-                  WINNER RESOLVED SUCCESSFULLY!
+                <div className="mb-4 p-4 border border-green-500/50 bg-green-500/10">
+                  <div className="text-green-400 text-sm font-mono font-bold mb-2">
+                    WINNER RESOLVED SUCCESSFULLY!
+                  </div>
+                  {calculatedWinner.winnerAddress ? (
+                    <div className="text-green-300 text-xs font-mono">
+                      {shortenAddress(calculatedWinner.winnerAddress as `0x${string}`)}
+                      {calculatedWinner.winnerAddress === address && ' (YOU!)'}
+                      {' '}wins with number {calculatedWinner.winningNumber?.toString()}!
+                      <br />
+                      <span className="text-slate-400">Prize transferred on-chain.</span>
+                    </div>
+                  ) : (
+                    <div className="text-yellow-400 text-xs font-mono">
+                      No winner - all numbers were duplicated. Prize returned to players.
+                    </div>
+                  )}
                 </div>
               )}
 
