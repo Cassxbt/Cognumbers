@@ -83,6 +83,7 @@ export function GameDetail() {
   const { fetchHandles, isLoading: isFetchingHandles } = usePlayerChoiceHandles()
   const {
     resolveWinner,
+    hash: resolveHash,
     isPending: isResolving,
     isConfirming: isResolveConfirming,
     isSuccess: isResolveSuccess,
@@ -305,27 +306,29 @@ export function GameDetail() {
     Number(game.playerCount) > 0
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <Link to="/games" className="text-slate-400 hover:text-cyan-400 font-mono text-sm">
+    <div className="max-w-4xl mx-auto px-3 md:px-4 py-4 md:py-8">
+      <div className="mb-4 md:mb-6">
+        <Link to="/games" className="text-slate-400 hover:text-cyan-400 font-mono text-xs md:text-sm">
           &lt; BACK TO GAMES
         </Link>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="cyber-card p-6">
-            <div className="flex items-start justify-between mb-6">
+      <div className="grid lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
+          {/* Game header card */}
+          <div className="cyber-card p-4 md:p-6">
+            {/* Header row */}
+            <div className="flex items-start justify-between mb-4 md:mb-6">
               <div>
-                <div className="text-xs text-slate-500 font-mono mb-1">GAME</div>
-                <h1 className="text-4xl font-bold text-white font-['Orbitron']">
+                <div className="text-[10px] md:text-xs text-slate-500 font-mono mb-1">GAME</div>
+                <h1 className="text-2xl md:text-4xl font-bold text-white font-['Orbitron']">
                   #{(gameId ?? 0n).toString().padStart(4, '0')}
                 </h1>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 md:gap-3">
                 <button
                   onClick={handleShare}
-                  className="px-3 py-1.5 border border-slate-600 hover:border-cyan-400 text-slate-400 hover:text-cyan-400 font-mono text-xs transition-colors"
+                  className="px-2 md:px-3 py-1 md:py-1.5 border border-slate-600 hover:border-cyan-400 text-slate-400 hover:text-cyan-400 font-mono text-[10px] md:text-xs transition-colors"
                 >
                   {copied ? 'COPIED!' : 'SHARE'}
                 </button>
@@ -333,40 +336,42 @@ export function GameDetail() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <div className="text-xs text-slate-500 font-mono mb-1">ENTRY FEE</div>
-                <div className="text-2xl text-cyan-400 font-mono">
-                  {formatEntryFee(game.entryFee)} ETH
+            {/* Entry fee & Prize - responsive grid */}
+            <div className="grid grid-cols-2 gap-3 md:gap-6">
+              <div className="p-2 md:p-0 bg-slate-800/30 md:bg-transparent border border-slate-700 md:border-0">
+                <div className="text-[10px] md:text-xs text-slate-500 font-mono mb-1">ENTRY FEE</div>
+                <div className="text-lg md:text-2xl text-cyan-400 font-mono">
+                  {formatEntryFee(game.entryFee)} <span className="text-sm md:text-xl">ETH</span>
                 </div>
               </div>
-              <div>
-                <div className="text-xs text-slate-500 font-mono mb-1">PRIZE POOL</div>
-                <div className="text-2xl text-green-400 font-mono">
-                  {formatPrize(game.entryFee, game.playerCount)} ETH
+              <div className="p-2 md:p-0 bg-slate-800/30 md:bg-transparent border border-slate-700 md:border-0">
+                <div className="text-[10px] md:text-xs text-slate-500 font-mono mb-1">PRIZE POOL</div>
+                <div className="text-lg md:text-2xl text-green-400 font-mono">
+                  {formatPrize(game.entryFee, game.playerCount)} <span className="text-sm md:text-xl">ETH</span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 pt-6 border-t border-slate-700">
-              <div className="grid grid-cols-2 gap-6">
+            {/* Players & Time - responsive grid */}
+            <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-slate-700">
+              <div className="grid grid-cols-2 gap-3 md:gap-6">
                 <div>
-                  <div className="text-xs text-slate-500 font-mono mb-2">PLAYERS</div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-3 bg-slate-800 overflow-hidden">
+                  <div className="text-[10px] md:text-xs text-slate-500 font-mono mb-2">PLAYERS</div>
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="flex-1 h-2 md:h-3 bg-slate-800 overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-cyan-400/50 to-cyan-400 transition-all duration-500"
                         style={{ width: `${(Number(game.playerCount) / MAX_PLAYERS) * 100}%` }}
                       />
                     </div>
-                    <span className="text-white font-mono text-lg">
+                    <span className="text-white font-mono text-sm md:text-lg">
                       {game.playerCount.toString()}/{MAX_PLAYERS}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-slate-500 font-mono mb-2">TIME REMAINING</div>
-                  <div className={`text-2xl font-mono ${expired ? 'text-red-400' : 'text-white'}`}>
+                  <div className="text-[10px] md:text-xs text-slate-500 font-mono mb-2">TIME REMAINING</div>
+                  <div className={`text-lg md:text-2xl font-mono ${expired ? 'text-red-400' : 'text-white'}`}>
                     {gameStatus === GameStatus.Open ? timeRemaining || getTimeRemaining(game.deadline) : '--:--'}
                   </div>
                 </div>
@@ -474,26 +479,65 @@ export function GameDetail() {
           )}
 
           {gameStatus === GameStatus.Finished && game.winner !== '0x0000000000000000000000000000000000000000' && (
-            <div className="cyber-card p-6 border-green-500/50">
-              <h2 className="text-lg font-bold text-green-400 mb-4 font-['Orbitron']">
-                WINNER
-              </h2>
+            <div className="cyber-card p-6 border-green-500/50 bg-gradient-to-b from-green-500/5 to-transparent">
+              {/* Header with trophy */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/20">
+                  <span className="text-2xl">🏆</span>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-green-400 font-['Orbitron']">
+                    WINNER
+                  </h2>
+                  <p className="text-xs text-slate-500 font-mono">Prize claimed on-chain</p>
+                </div>
+              </div>
+
+              {/* Winner details */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 font-mono">ADDRESS</span>
-                  <span className={`font-mono ${game.winner === address ? 'text-green-400' : 'text-white'}`}>
+                <div className="p-3 bg-slate-800/50 border border-slate-700">
+                  <div className="text-xs text-slate-500 font-mono mb-1">WINNER ADDRESS</div>
+                  <div className={`font-mono text-lg ${game.winner === address ? 'text-green-400' : 'text-white'}`}>
                     {shortenAddress(game.winner)}
-                    {game.winner === address && ' (YOU!)'}
-                  </span>
+                    {game.winner === address && (
+                      <span className="ml-2 px-2 py-0.5 text-xs bg-green-500/20 border border-green-500/30 text-green-400">
+                        YOU WON!
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 font-mono">WINNING NUMBER</span>
-                  <span className="text-2xl text-cyan-400 font-mono">{game.winningNumber.toString()}</span>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-slate-800/50 border border-slate-700 text-center">
+                    <div className="text-xs text-slate-500 font-mono mb-1">WINNING NUMBER</div>
+                    <div className="text-3xl text-cyan-400 font-mono font-bold">{game.winningNumber.toString()}</div>
+                  </div>
+                  <div className="p-3 bg-slate-800/50 border border-slate-700 text-center">
+                    <div className="text-xs text-slate-500 font-mono mb-1">PRIZE WON</div>
+                    <div className="text-2xl text-green-400 font-mono font-bold">{formatPrize(game.entryFee, game.playerCount)}</div>
+                    <div className="text-xs text-slate-500 font-mono">ETH</div>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 font-mono">PRIZE WON</span>
-                  <span className="text-2xl text-green-400 font-mono">{formatPrize(game.entryFee, game.playerCount)} ETH</span>
-                </div>
+
+                {/* Transaction verification link */}
+                {resolveHash && (
+                  <div className="pt-3 border-t border-slate-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-500 font-mono">TRANSACTION</span>
+                      <a
+                        href={`https://sepolia.basescan.org/tx/${resolveHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-cyan-400 hover:text-cyan-300 font-mono flex items-center gap-1"
+                      >
+                        {resolveHash.slice(0, 10)}...{resolveHash.slice(-6)}
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -576,12 +620,26 @@ export function GameDetail() {
                     WINNER RESOLVED SUCCESSFULLY!
                   </div>
                   {calculatedWinner.winnerAddress ? (
-                    <div className="text-green-300 text-xs font-mono">
-                      {shortenAddress(calculatedWinner.winnerAddress as `0x${string}`)}
-                      {calculatedWinner.winnerAddress === address && ' (YOU!)'}
-                      {' '}wins with number {calculatedWinner.winningNumber?.toString()}!
-                      <br />
-                      <span className="text-slate-400">Prize transferred on-chain.</span>
+                    <div className="text-green-300 text-xs font-mono space-y-1">
+                      <div>
+                        {shortenAddress(calculatedWinner.winnerAddress as `0x${string}`)}
+                        {calculatedWinner.winnerAddress === address && ' (YOU!)'}
+                        {' '}wins with number {calculatedWinner.winningNumber?.toString()}!
+                      </div>
+                      <div className="text-slate-400">Prize transferred on-chain.</div>
+                      {resolveHash && (
+                        <div className="pt-2 border-t border-green-500/30">
+                          <span className="text-slate-500">TX: </span>
+                          <a
+                            href={`https://sepolia.basescan.org/tx/${resolveHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-cyan-400 hover:text-cyan-300 underline"
+                          >
+                            {resolveHash.slice(0, 10)}...{resolveHash.slice(-8)}
+                          </a>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="text-yellow-400 text-xs font-mono">
@@ -632,18 +690,22 @@ export function GameDetail() {
           )}
         </div>
 
-        <div className="space-y-6">
-          <div className="cyber-card p-6">
-            <h3 className="text-sm font-bold text-white mb-4 font-mono">PLAYERS ({game.playerCount.toString()})</h3>
+        {/* Sidebar - collapses to horizontal cards on mobile */}
+        <div className="space-y-4 md:space-y-6">
+          {/* Players list */}
+          <div className="cyber-card p-4 md:p-6">
+            <h3 className="text-xs md:text-sm font-bold text-white mb-3 md:mb-4 font-mono">
+              PLAYERS ({game.playerCount.toString()})
+            </h3>
             {players && players.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-1 md:space-y-2 max-h-48 md:max-h-none overflow-y-auto">
                 {players.map((player, index) => (
                   <div
                     key={player}
-                    className="flex items-center justify-between py-2 border-b border-slate-800 last:border-0"
+                    className="flex items-center justify-between py-1.5 md:py-2 border-b border-slate-800 last:border-0"
                   >
-                    <span className="text-slate-500 font-mono text-xs">#{index + 1}</span>
-                    <span className={`font-mono text-sm ${player === address ? 'text-cyan-400' : 'text-slate-400'}`}>
+                    <span className="text-slate-500 font-mono text-[10px] md:text-xs">#{index + 1}</span>
+                    <span className={`font-mono text-xs md:text-sm ${player === address ? 'text-cyan-400' : 'text-slate-400'}`}>
                       {shortenAddress(player)}
                       {player === address && ' (YOU)'}
                     </span>
@@ -651,13 +713,14 @@ export function GameDetail() {
                 ))}
               </div>
             ) : (
-              <p className="text-slate-500 font-mono text-sm">NO PLAYERS YET</p>
+              <p className="text-slate-500 font-mono text-xs md:text-sm">NO PLAYERS YET</p>
             )}
           </div>
 
-          <div className="cyber-card p-6">
-            <h3 className="text-sm font-bold text-white mb-4 font-mono">GAME INFO</h3>
-            <div className="space-y-3 text-sm font-mono">
+          {/* Game info - horizontal on mobile */}
+          <div className="cyber-card p-4 md:p-6">
+            <h3 className="text-xs md:text-sm font-bold text-white mb-3 md:mb-4 font-mono">GAME INFO</h3>
+            <div className="space-y-2 md:space-y-3 text-xs md:text-sm font-mono">
               <div className="flex justify-between">
                 <span className="text-slate-500">CREATOR</span>
                 <span className="text-slate-400">{shortenAddress(game.creator)}</span>
@@ -673,13 +736,14 @@ export function GameDetail() {
             </div>
           </div>
 
-          <div className="cyber-card p-6">
-            <h3 className="text-sm font-bold text-white mb-4 font-mono">HOW TO WIN</h3>
-            <p className="text-slate-400 font-mono text-xs leading-relaxed">
+          {/* How to win - collapsible hint on mobile */}
+          <div className="cyber-card p-4 md:p-6">
+            <h3 className="text-xs md:text-sm font-bold text-white mb-3 md:mb-4 font-mono">HOW TO WIN</h3>
+            <p className="text-slate-400 font-mono text-[10px] md:text-xs leading-relaxed">
               Choose a number from 1-10. The winner is the player who picks
-              the MINIMUM UNIQUE number. If multiple players pick the same
-              number, it's not unique. The smallest number that only one
-              person picked wins.
+              the <span className="text-cyan-400">MINIMUM UNIQUE</span> number.
+              If multiple players pick the same number, it&apos;s not unique.
+              The smallest number that only one person picked wins.
             </p>
           </div>
         </div>
