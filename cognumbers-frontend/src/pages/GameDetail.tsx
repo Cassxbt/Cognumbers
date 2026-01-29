@@ -63,6 +63,7 @@ export function GameDetail() {
 
   const {
     joinGame,
+    hash: joinHash,
     isPending: isJoining,
     isConfirming: isJoinConfirming,
     isSuccess: isJoinSuccess,
@@ -407,8 +408,34 @@ export function GameDetail() {
               )}
 
               {isJoinSuccess && (
-                <div className="mt-4 p-3 border border-green-500/50 bg-green-500/10 text-green-400 text-sm font-mono">
-                  SUCCESSFULLY JOINED!
+                <div className="mt-4 p-4 border border-green-500/50 bg-green-500/10">
+                  <div className="text-green-400 text-sm font-mono font-bold mb-2">
+                    SUCCESSFULLY JOINED!
+                  </div>
+                  <div className="text-green-300 text-xs font-mono">
+                    Your number is encrypted on-chain. Nobody can see it until the game ends.
+                  </div>
+                  {joinHash && (
+                    <div className="mt-3 pt-3 border-t border-green-500/30">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-xs text-slate-500 font-mono">ENCRYPTED TX:</span>
+                        <a
+                          href={`https://sepolia.basescan.org/tx/${joinHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-cyan-400 hover:text-cyan-300 font-mono flex items-center gap-1"
+                        >
+                          {joinHash.slice(0, 10)}...{joinHash.slice(-6)}
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                      </div>
+                      <p className="text-[10px] text-slate-500 font-mono mt-1">
+                        View input data to see encrypted ciphertext
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
